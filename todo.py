@@ -1,11 +1,33 @@
 import os
 import sys
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
 max_tasks_value = os.getenv("TODO_MAX_TASKS")
 app_name = os.getenv("TODO_APP_NAME")
+
+tasks = []
+
+try:
+    with open("memory.json", "r") as file:
+        tasks = json.load(file)
+
+        if not isinstance(tasks, list):
+            tasks = []
+
+except FileNotFoundError:
+    tasks = []
+
+except json.JSONDecodeError:
+    tasks = []
+
+
+def save_tasks():
+    with open("memory.json", "w") as file:
+        json.dump(tasks, file, indent=4)
+
 
 if max_tasks_value is None:
     sys.stderr.write("ERROR... TODO_MAX_TASKS is missing from .env\n")
@@ -24,8 +46,6 @@ except ValueError:
 if max_tasks <= 0:
     sys.stderr.write("ERROR... TODO_MAX_TASKS must be greater than 0\n")
     sys.exit(1)
-
-tasks = []
 
 
 def commands_work(command_example):
@@ -68,6 +88,7 @@ def commands_work(command_example):
                     else:
                         add_example = " ".join(user_args[1:])
                         tasks.append(add_example)
+                        save_tasks()
 
             elif user_args[0] == "remove":
                 if len(user_args) < 2:
@@ -83,6 +104,7 @@ def commands_work(command_example):
                             sys.stderr.write("ERROR... that task number does not exist\n")
                         else:
                             tasks.pop(task_number - 1)
+                            save_tasks()
 
             else:
                 sys.stderr.write("ERROR... the command is not recognized\n")
@@ -111,6 +133,7 @@ def commands_work(command_example):
             else:
                 add_example = " ".join(command_example[2:])
                 tasks.append(add_example)
+                save_tasks()
 
     elif command_example[1] == "remove":
         if len(command_example) < 3:
@@ -126,6 +149,7 @@ def commands_work(command_example):
                     sys.stderr.write("ERROR... that task number does not exist\n")
                 else:
                     tasks.pop(task_number - 1)
+                    save_tasks()
 
     elif command_example[1] == "exit":
         sys.exit()
